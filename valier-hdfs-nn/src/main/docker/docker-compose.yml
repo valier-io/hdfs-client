@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # HDFS NameNode
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-namenode-integration
+    hostname: namenode
+    environment:
+      - CLUSTER_NAME=integration-test-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_proxyuser_hdfs_hosts=*
+      - CORE_CONF_hadoop_proxyuser_hdfs_groups=*
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_namenode_name_dir=/hadoop/dfs/name
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+    ports:
+      - "9000:9000"     # HDFS NameNode RPC
+      - "9870:9870"     # HDFS NameNode Web UI
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+      - ./test-data:/test-data  # Mount test data directory
+    networks:
+      - hdfs-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9870/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # HDFS DataNode (required for a functional cluster)
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-datanode-integration
+    hostname: datanode
+    depends_on:
+      namenode:
+        condition: service_healthy
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_datanode_data_dir=/hadoop/dfs/data
+    ports:
+      - "9864:9864"     # DataNode Web UI
+      - "9866:9866"     # DataNode Data Transfer Protocol
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    networks:
+      - hdfs-net
+
+  # Test setup service - initializes test data
+  test-setup:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-test-setup
+    depends_on:
+      datanode:
+        condition: service_started
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - HDFS_CONF_dfs_replication=1
+    networks:
+      - hdfs-net
+    volumes:
+      - ./test-data:/test-data
+      - ./test-scripts:/test-scripts
+    entrypoint: >
+      bash -c "
+        # Initialize Hadoop configuration first
+        /entrypoint.sh echo 'Hadoop configuration initialized'
+
+        echo 'Starting test setup...'
+
+        # Wait for HDFS to be ready
+        echo 'Waiting for NameNode to be accessible...'
+        while ! nc -z namenode 9000; do
+          echo 'Waiting for NameNode...'
+          sleep 5
+        done
+
+        echo 'NameNode is accessible, waiting for HDFS to be ready...'
+
+        # Wait for HDFS to be fully operational
+        while ! hdfs dfsadmin -report 2>/dev/null | grep -q 'Live datanodes'; do
+          echo 'Waiting for DataNodes to be ready...'
+          sleep 10
+        done
+
+        echo 'HDFS is ready, setting up test data...'
+
+        # Run the comprehensive test setup script
+        /test-scripts/setup-test-data.sh
+
+        echo 'Test setup service completed!'
+      "
+
+volumes:
+  namenode_data:
+  datanode_data:
+
+networks:
+  hdfs-net:
+    driver: bridge

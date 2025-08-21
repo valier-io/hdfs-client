@@ -1,0 +1,4 @@
+[submodule "external/hadoop"]
+	path = external/hadoop
+	url = https://github.com/apache/hadoop.git
+	branch = rel/release-3.4.0

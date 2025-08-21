@@ -1,0 +1,23 @@
+This is a larger test file for integration testing of the HDFS client.
+It contains multiple lines of text to test block reading and streaming capabilities.
+
+Line 1: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Line 2: Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Line 3: Ut enim ad minim veniam, quis nostrud exercitation ullamco.
+Line 4: Duis aute irure dolor in reprehenderit in voluptate velit esse.
+Line 5: Excepteur sint occaecat cupidatat non proident, sunt in culpa.
+
+Block testing content:
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+This file tests:
+- Multi-line content handling
+- Block boundary testing
+- Data integrity verification
+- Stream processing capabilities
+
+End of large test file.

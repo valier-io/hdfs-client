@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.valier</groupId>
+    <artifactId>valier-hdfs</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Valier HDFS</name>
+    <description>Valier HDFS client libraries and components</description>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <protobuf.version>3.5.1</protobuf.version>
+        <grpc.version>1.10.0</grpc.version>
+        <lombok.version>1.18.30</lombok.version>
+        <javax.annotation.version>1.3.2</javax.annotation.version>
+        <junit.jupiter.version>5.9.2</junit.jupiter.version>
+        <assertj.version>3.24.2</assertj.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <hadoop.version>3.4.0</hadoop.version>
+        <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
+        <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
+        <maven.failsafe.version>3.1.2</maven.failsafe.version>
+        <maven.surefire.version>3.1.2</maven.surefire.version>
+        <spotless.maven.plugin.version>2.46.1</spotless.maven.plugin.version>
+    </properties>
+
+    <modules>
+        <module>valier-hdfs-crt</module>
+        <module>valier-hdfs-nn</module>
+        <module>valier-hdfs-dn</module>
+        <module>valier-hdfs-client</module>
+        <module>valier-hdfs-file-manager</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Protobuf and gRPC dependencies -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            
+            <!-- Annotation dependencies -->
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax.annotation.version}</version>
+            </dependency>
+            
+            <!-- Lombok for code generation -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            
+            <!-- Logging dependencies -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            
+            <!-- Test dependencies -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Compiler plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>11</source>
+                        <target>11</target>
+                    </configuration>
+                </plugin>
+                
+                <!-- Unit test plugin (excludes integration tests) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.version}</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>**/*IntegrationTest.java</exclude>
+                            <exclude>**/integration/**</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                
+                <!-- Integration test plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven.failsafe.version}</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*IntegrationTest.java</include>
+                            <include>**/integration/**</include>
+                        </includes>
+                        <skipITs>${skipITs}</skipITs>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                
+                <!-- Protobuf compilation plugin -->
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>${protobuf.maven.plugin.version}</version>
+                    <configuration>
+                        <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                        <pluginId>grpc-java</pluginId>
+                        <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                        <protoSourceRoot>${project.basedir}/src/main/proto</protoSourceRoot>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>compile-custom</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                
+                <!-- Spotless code formatting plugin -->
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.maven.plugin.version}</version>
+                    <configuration>
+                        <!-- Java formatting -->
+                        <java>
+                            <!-- Apply to all Java source files in modules, excluding top-level src -->
+                            <includes>
+                                <include>*/src/main/java/**/*.java</include>
+                                <include>*/src/test/java/**/*.java</include>
+                            </includes>
+                            <!-- Exclude top-level src directory (old git submodule) and external directory -->
+                            <excludes>
+                                <exclude>src/**</exclude>
+                                <exclude>external/**</exclude>
+                            </excludes>
+                            <!-- Use Google Java Format -->
+                            <googleJavaFormat>
+                                <version>1.17.0</version>
+                                <style>GOOGLE</style>
+                            </googleJavaFormat>
+                            <!-- Remove unused imports -->
+                            <removeUnusedImports />
+                            <!-- Ensure files end with newline -->
+                            <endWithNewline />
+                            <!-- Trim trailing whitespace -->
+                            <trimTrailingWhitespace />
+                        </java>
+                        
+                        <!-- Other file formatting -->
+                        <formats>
+                            <!-- Markdown formatting -->
+                            <format>
+                                <includes>
+                                    <include>**/*.md</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>external/**</exclude>
+                                </excludes>
+                                <endWithNewline />
+                                <trimTrailingWhitespace />
+                            </format>
+                            
+                            <!-- Properties files -->
+                            <format>
+                                <includes>
+                                    <include>**/*.properties</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>external/**</exclude>
+                                </excludes>
+                                <endWithNewline />
+                                <trimTrailingWhitespace />
+                            </format>
+                            
+                            <!-- YAML files -->
+                            <format>
+                                <includes>
+                                    <include>**/*.yml</include>
+                                    <include>**/*.yaml</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>external/**</exclude>
+                                </excludes>
+                                <endWithNewline />
+                                <trimTrailingWhitespace />
+                            </format>
+                        </formats>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                
+                <!-- License Maven Plugin -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>2.4.0</version>
+                    <configuration>
+                        <licenseName>apache_v2</licenseName>
+                        <copyrightOwners>Valier HDFS Contributors</copyrightOwners>
+                        <inceptionYear>2025</inceptionYear>
+                        <excludes>
+                            <exclude>external/**</exclude>
+                            <exclude>**/*.proto</exclude>
+                            <exclude>LICENSE</exclude>
+                            <exclude>NOTICE</exclude>
+                            <exclude>**/*.md</exclude>
+                            <exclude>**/*.txt</exclude>
+                            <exclude>**/*.xml</exclude>
+                            <exclude>**/*.yml</exclude>
+                            <exclude>**/*.yaml</exclude>
+                            <exclude>**/*.properties</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>generate-license-report</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>aggregate-third-party-report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
+        <plugins>
+            <!-- Enable Spotless code formatting for all modules -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            
+            <!-- Enable License plugin for all modules -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+            </plugin>
+            
+            <!-- Clean plugin to delete proto files -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>valier-hdfs-crt/src/main/proto</directory>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>.gitkeep</exclude>
+                            </excludes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                        <fileset>
+                            <directory>valier-hdfs-nn/src/main/proto</directory>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>.gitkeep</exclude>
+                            </excludes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                        <fileset>
+                            <directory>valier-hdfs-dn/src/main/proto</directory>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>.gitkeep</exclude>
+                            </excludes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+        </plugins>
+        
+        <extensions>
+            <!-- OS detection for protoc plugin -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os.maven.plugin.version}</version>
+            </extension>
+        </extensions>
+    </build>
+</project>
